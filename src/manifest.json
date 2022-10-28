@@ -1,0 +1,20 @@
+{
+    "name": "Anki Quicker Adder for OpenRussian.org",
+    "description": "Quickly adds your favourite word to your Anki. Ankiconnect is required.",
+    "version": "1.0",
+    "manifest_version": 3,
+    "action": {
+      "default_popup": "settings.html",
+      "default_icon": "extension.png"
+    },
+    "content_scripts": [
+        {
+          "js": [
+            "scripts/content.js"
+          ],
+          "matches": [
+            "https://en.openrussian.org/*"
+          ]
+        }
+      ]
+  }
