@@ -140,20 +140,66 @@ class App {
         });
     }
 
+    #setupImportSentencesButton() {
+        const tabs = document.querySelector("div.words-sentences-tabs");
+        if (!tabs) {return;}
+
+        const tab = document.querySelector("a.active[href='/mywords?sentences']");
+        if (!tab) {return;}
+
+        const btn = document.createElement("button");
+        btn.innerHTML = "Import All";
+        tabs.parentElement.appendChild(btn);
+
+        btn.addEventListener("click", async () => {
+            await this.#importAllSentences();
+        });
+    }
+
     run() {
         this.#setupAddSentenceCallback();
         this.#setupAddWordCallback();
+        this.#setupImportSentencesButton();
     }
 
-    async test() {
-        const decks = await this.#client.getDeskNamesAsync();
-        console.log(decks);
-    }
+    async #importAllSentences() {
+        console.log('Importing all sentences...');
 
+        var sentences = document.querySelectorAll("li.sentence");
+        if (!sentences) {
+            return;
+        }
+
+        console.log('Sentences found:' + sentences.length);
+
+        for (let index = 0; index < sentences.length; index++) {
+            const sentence = sentences[index];
+            
+            const elCopy = this.#createElementFromHTML(sentence.innerHTML);
+
+            elCopy.querySelectorAll("a").forEach(a => a.href = a.href);
+            elCopy.querySelectorAll("i").forEach(i => i.remove());
+            elCopy.querySelectorAll("button").forEach(a => a.remove());
+
+            const ruEl = elCopy.querySelector(".ru");
+            const enEl = elCopy.querySelector(".tl");
+
+            const entry = {
+                text: ruEl.innerText.trim(),
+                html: ruEl.innerHTML,
+                translation: enEl.innerText.trim()
+            }
+
+            console.log('Importing sentence: ' + entry.text);
+
+            await this.#client.addSentenceAsync(this.#deckName, entry);
+        }
+    }
 }
 
 function Run() {
-    new App("Test2").run();
+    const app = new App("Test2");
+    app.run();
 }
 
 Run();
