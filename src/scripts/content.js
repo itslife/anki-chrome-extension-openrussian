@@ -3,48 +3,49 @@ class AnkiApiClient {
         return await this.#invoke("deckNames", 6);
     }
 
-    async addSentenceAsync(deck, entry) {
+    async addSentenceAsync(config, entry) {
+        const fields = {};
+        fields[config.plainTextField] = entry.text;
+        fields[config.translationField] = entry.translation;
+        fields[config.htmlTextField] = entry.html;
+
+        return await this.#addOrUpdateNote(config.deckName, config.modelName, fields, config.plainTextField, entry.text)
+    }
+
+    async #addOrUpdateNote(deckName, modelName, fields, indexField, indexFieldValue) {
         const ids = await this.#invoke("findNotes", 6, { 
-            query: `deck:${deck} "front:${entry.text}"`
+            query: `"deck:${deckName}" "${indexField}:${indexFieldValue}"`
         });
 
         if (ids && ids.length > 0) {
             const params = {
                 "note": {
                     "id": ids[0],
-                    "fields": {
-                        "Front": entry.text,
-                        "Back": entry.translation,
-                        "BackWithLinks": entry.html
-                    }
+                    "fields": fields
                 }
             };
     
             return await this.#invoke("updateNoteFields", 6, params);
-        } else {
-            const params = {
-                "note": {
-                    "deckName": deck,
-                    "modelName": "OpenRussian - Sentence",
-                    "fields": {
-                        "Front": entry.text,
-                        "Back": entry.translation,
-                        "BackWithLinks": entry.html
-                    },
-                    "options": {
-                        "allowDuplicate": false,
-                        "duplicateScope": "deck",
-                        "duplicateScopeOptions": {
-                            "deckName": deck,
-                            "checkChildren": false,
-                            "checkAllModels": false
-                        }
+        }
+
+        const params = {
+            "note": {
+                "deckName": deckName,
+                "modelName": modelName,
+                "fields": fields,
+                "options": {
+                    "allowDuplicate": false,
+                    "duplicateScope": "deck",
+                    "duplicateScopeOptions": {
+                        "deckName": deckName,
+                        "checkChildren": false,
+                        "checkAllModels": false
                     }
                 }
-            };
-    
-            return await this.#invoke("addNote", 6, params);
-        }  
+            }
+        };
+
+        return await this.#invoke("addNote", 6, params);
     }
 
     #invoke(action, version, params = {}) {
@@ -78,19 +79,46 @@ class AnkiApiClient {
     }
 }
 
-class App {
-    #client;
-    #deckName;
-
-    constructor(deckName) {
-        this.#client = new AnkiApiClient();
-        this.#deckName = deckName;
+class Toast {
+    constructor() {
+        const div = document.createElement('div');
+        div.id = 'snackbar';
+        document.body.appendChild(div);
     }
+    
+    show(msg) {
+        var x = document.getElementById("snackbar");
+        x.className = "show";
+        x.innerHTML = msg;
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+      }
+}
 
-    #createElementFromHTML(htmlString) {
+class Utils {
+    static createElementFromHTML(htmlString) {
         var div = document.createElement('div');
         div.innerHTML = htmlString.trim();
         return div;
+    }
+
+    static insertButton(parentElement, btnTitle, callback) {
+        const btn = document.createElement("button");
+        btn.innerHTML = btnTitle;
+        parentElement.appendChild(btn);
+
+        btn.addEventListener("click", callback);
+    }
+}
+
+class App {
+    #client;
+    #config;
+    #toast;
+
+    constructor(config) {
+        this.#client = new AnkiApiClient();
+        this.#config = config;
+        this.#toast = new Toast();
     }
 
     #setupAddSentenceCallback() {
@@ -102,26 +130,25 @@ class App {
         console.log(sentenceButs);
 
         sentenceButs.forEach(but => {
-            but.addEventListener("click", async (e) => {
-                console.log(e);
+            Utils.insertButton(but.parentElement, "Add", async (e) => {
+                const elCopy = Utils.createElementFromHTML(e.path[1].innerHTML);
 
-                const ruEl = this.#createElementFromHTML(e.path[1].innerHTML);
-
-                ruEl.querySelectorAll("a").forEach(a => a.href = a.href);
-                ruEl.querySelectorAll("i").forEach(i => i.remove());
-                ruEl.querySelectorAll("button").forEach(a => a.remove());
+                elCopy.querySelectorAll("a").forEach(a => a.href = a.href);
+                elCopy.querySelectorAll("i").forEach(i => i.remove());
+                elCopy.querySelectorAll("button").forEach(a => a.remove());
 
                 const enEl = e.path[2].querySelector(".tl");
 
                 const entry = {
-                    text: ruEl.innerText.trim(),
-                    html: ruEl.innerHTML,
+                    text: elCopy.innerText.trim(),
+                    html: elCopy.innerHTML,
                     translation: enEl.innerText.trim()
                 }
 
-                console.log(entry);
+                console.log('Importing sentence: ' + entry.text);
 
-                await this.#client.addSentenceAsync(this.#deckName, entry);
+                await this.#client.addSentenceAsync(this.#config, entry);
+                this.#toast.show('Imported sentence: ' + entry.text);
             });
         }
         );
@@ -147,11 +174,7 @@ class App {
         const tab = document.querySelector("a.active[href='/mywords?sentences']");
         if (!tab) {return;}
 
-        const btn = document.createElement("button");
-        btn.innerHTML = "Import All";
-        tabs.parentElement.appendChild(btn);
-
-        btn.addEventListener("click", async () => {
+        Utils.insertButton(tabs.parentElement, "Import All", async () => {
             await this.#importAllSentences();
         });
     }
@@ -175,7 +198,7 @@ class App {
         for (let index = 0; index < sentences.length; index++) {
             const sentence = sentences[index];
             
-            const elCopy = this.#createElementFromHTML(sentence.innerHTML);
+            const elCopy = Utils.createElementFromHTML(sentence.innerHTML);
 
             elCopy.querySelectorAll("a").forEach(a => a.href = a.href);
             elCopy.querySelectorAll("i").forEach(i => i.remove());
@@ -192,13 +215,21 @@ class App {
 
             console.log('Importing sentence: ' + entry.text);
 
-            await this.#client.addSentenceAsync(this.#deckName, entry);
+            await this.#client.addSentenceAsync(this.#config, entry);
         }
     }
 }
 
 function Run() {
-    const app = new App("Test2");
+    const config = {
+        deckName: "Test2",//"Russian Sentences",
+        modelName: "OpenRussian - Sentence",
+        plainTextField: "Front",
+        translationField: "Back",
+        htmlTextField: "BackWithLinks"
+    };
+
+    const app = new App(config);
     app.run();
 }
 

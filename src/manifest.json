@@ -14,6 +14,9 @@
           ],
           "matches": [
             "https://en.openrussian.org/*"
+          ],
+          "css" : [
+            "content.css"
           ]
         }
       ]
