@@ -10,10 +10,23 @@
     "content_scripts": [
         {
           "js": [
-            "scripts/content.js"
+            "scripts/lib.js",
+            "scripts/content-openru.js"
           ],
           "matches": [
             "https://en.openrussian.org/*"
+          ],
+          "css" : [
+            "content.css"
+          ]
+        },
+        {
+          "js": [
+            "scripts/lib.js",
+            "scripts/content-rupod101.js"
+          ],
+          "matches": [
+            "https://www.russianpod101.com/russian-vocabulary-lists/*"
           ],
           "css" : [
             "content.css"
