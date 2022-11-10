@@ -83,9 +83,6 @@ class App {
         }
 
         divs.forEach(div => {
-            const existingBtn = div.querySelector("button.anki-add-btn");
-            if (existingBtn) return;
-
             Utils.insertButton(div, "Add", async (e) => {
                 const ruEl = e.path[1].querySelector("div[lang='ru']");
                 const enEl = e.path[1].querySelector("div.WordDetails__sample_headings_english_b9b834");

@@ -2,11 +2,44 @@ class App {
     #client;
     #config;
     #toast;
+    #observer;
 
     constructor(config) {
         this.#client = new AnkiApiClient();
         this.#config = config;
         this.#toast = new Toast();
+
+        this.#observer = new MutationObserver((list, ob) => this.#checkDomUpdates(list, ob, this));
+
+        const observeConfig = { childList: true, subtree: true };
+        this.#observer.observe(document, observeConfig);
+    }
+
+    #checkDomUpdates(mutationList, observer, self) {
+        var hasNewNode = false;
+
+        for (const mutation of mutationList) {
+            if (mutation.type !== 'childList') return;
+
+            const nodeList = mutation.addedNodes;
+            if (!nodeList || nodeList.length < 1) return;
+
+            hasNewNode = true;
+            break;
+        }
+
+        if (!hasNewNode) return;
+
+        self.checkDomForUpdates();
+    }
+
+    checkDomForUpdates() {
+
+        Utils.debounce(() => {
+            console.log("Checking supported items...");
+
+            this.run();
+        })();
     }
 
     #setupAddSentenceCallback() {
@@ -46,8 +79,6 @@ class App {
             return;
         }
 
-        console.log(wordBut);
-
         wordBut.addEventListener("click", () => {
             console.log("wordBut");
         });
@@ -55,10 +86,10 @@ class App {
 
     #setupImportSentencesButton() {
         const tabs = document.querySelector("div.words-sentences-tabs");
-        if (!tabs) {return;}
+        if (!tabs) { return; }
 
         const tab = document.querySelector("a.active[href='/mywords?sentences']");
-        if (!tab) {return;}
+        if (!tab) { return; }
 
         Utils.insertButton(tabs.parentElement, "Import All", async () => {
             await this.#importAllSentences();
@@ -83,7 +114,7 @@ class App {
 
         for (let index = 0; index < sentences.length; index++) {
             const sentence = sentences[index];
-            
+
             const elCopy = Utils.createElementFromHTML(sentence.innerHTML);
 
             elCopy.querySelectorAll("a").forEach(a => a.href = a.href);

@@ -106,6 +106,9 @@ class Utils {
     }
 
     static insertButton(parentElement, btnTitle, callback) {
+        const existingBtn = parentElement.querySelector("button.anki-add-btn");
+        if (existingBtn) return;
+
         const btn = document.createElement("button");
         btn.classList = ["anki-add-btn"]
         btn.innerHTML = btnTitle;

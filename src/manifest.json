@@ -1,6 +1,6 @@
 {
-    "name": "Anki Quicker Adder for OpenRussian.org",
-    "description": "Quickly adds your favourite word to your Anki. Ankiconnect is required.",
+    "name": "Anki Quicker Adder for Russian Language Leaner",
+    "description": "Quickly adds your favourite sentence to your Anki. Ankiconnect is required.",
     "version": "1.0",
     "manifest_version": 3,
     "action": {
