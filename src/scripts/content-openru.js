@@ -50,13 +50,14 @@ class App {
 
         sentenceButs.forEach(but => {
             Utils.insertButton(but.parentElement, "Add", async (e) => {
-                const elCopy = Utils.createElementFromHTML(e.path[1].innerHTML);
+                const parentNode = e.currentTarget.parentNode;
+                const elCopy = Utils.createElementFromHTML(parentNode.innerHTML);
 
                 elCopy.querySelectorAll("a").forEach(a => a.href = a.href);
                 elCopy.querySelectorAll("i").forEach(i => i.remove());
                 elCopy.querySelectorAll("button").forEach(a => a.remove());
 
-                const enEl = e.path[2].querySelector(".tl");
+                const enEl = parentNode.parentNode.querySelector(".tl");
 
                 const entry = {
                     text: elCopy.innerText.trim(),

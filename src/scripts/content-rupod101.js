@@ -45,6 +45,12 @@ class App {
         })();
     }
 
+    #findItem(text) {
+        for(let item of this.#items) {
+            if (item.target == text) return item;
+        }
+    }
+
     #setupMainSentenceCallback() {
         const divs = document.querySelectorAll("div.CompactWord__box_be6873");
         if (!divs) {
@@ -61,7 +67,8 @@ class App {
                 if (!ruEl || !enEl) return;
                 const text = ruEl.innerText;
                 if (!text) return;
-                const item = this.#items[text];
+
+                const item = this.#findItem(text);
                 if (!item) return;
 
                 const note = {
@@ -89,7 +96,7 @@ class App {
                 if (!ruEl || !enEl) return;
                 const text = ruEl.innerText;
                 if (!text) return;
-                const item = this.#items[text];
+                const item = this.#findItem(text);
                 if (!item) return;
 
                 const note = {
@@ -139,25 +146,25 @@ class App {
 
         const list = JSON.parse(vocabDiv.attributes['data-wordlist'].value);
 
-        const items = {};
+        const items = [];
 
         for (let item of list.items) {
-            items[item.target] = {
-                target: item.target,
+            items.push({
+                target: item.target.replace('  ', ' '),
                 english: item.english,
                 audio: item.audio,
                 image: item.image
-            }
+            });
 
             if (!item.samples) { continue; }
 
             for (let sample of item.samples) {
-                items[sample.target] = {
-                    target: sample.target,
+                items.push({
+                    target: sample.target.replace('  ', ' '),
                     english: sample.english,
                     audio: sample.audio,
                     image: sample.image
-                }
+                });
             }
         }
         this.#items = items;
